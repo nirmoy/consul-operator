@@ -1,7 +1,7 @@
 apiVersion: consuloperator.k8s.io/v1alpha1
 kind: ConsulCluster
 metadata:
-  name: example-cluster
+  name: example-consul-cluster
 spec:
-  clusterName: example-cluster
+  clusterName: example-consul-cluster
   size: 1 # support's only one
