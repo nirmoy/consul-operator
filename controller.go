@@ -36,7 +36,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	//samplev1alpha1 "github.com/nirmoy/consul-operator/pkg/apis/consuloperator/v1alpha1"
+	samplev1alpha1 "github.com/nirmoy/consul-operator/pkg/apis/consuloperator/v1alpha1"
 	"github.com/nirmoy/consul-operator/pkg/cluster"
 	clientset "github.com/nirmoy/consul-operator/pkg/generated/clientset/versioned"
 	samplescheme "github.com/nirmoy/consul-operator/pkg/generated/clientset/versioned/scheme"
@@ -73,7 +73,8 @@ type Controller struct {
 	workqueue workqueue.RateLimitingInterface
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
-	recorder record.EventRecorder
+	recorder      record.EventRecorder
+	consulCluster *cluster.Cluster
 }
 
 func NewController(
@@ -98,6 +99,7 @@ func NewController(
 		ConsulClustersSynced: ConsulClusterInformer.Informer().HasSynced,
 		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ConsulClusters"),
 		recorder:             recorder,
+		consulCluster:        cluster.New(),
 	}
 
 	klog.Info("Setting up event handlers")
@@ -242,15 +244,15 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	deploymentName := ConsulCluster.Spec.DeploymentName
-	if deploymentName == "" {
+	clusterName := ConsulCluster.Spec.ClusterName
+	if clusterName == "" {
 		utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
 		return nil
 	}
 
-	cluster.CreatePod(deploymentName, c.kubeclientset)
+	c.consulCluster.Sync(clusterName, c.kubeclientset, ConsulCluster.Spec.Size)
 
-	err = c.updateConsulClusterStatus(ConsulCluster, deployment)
+	err = c.updateConsulClusterStatus(ConsulCluster)
 	if err != nil {
 		return err
 	}

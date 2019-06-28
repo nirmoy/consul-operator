@@ -32,8 +32,8 @@ type ConsulCluster struct {
 }
 
 type ConsulClusterSpec struct {
-	Size           *int32 `json:"size"`
-	DeploymentName string `json:"clusterName"`
+	Size        int32  `json:"size"`
+	ClusterName string `json:"clusterName"`
 }
 
 type ConsulClusterStatus struct {
