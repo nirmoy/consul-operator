@@ -4,4 +4,4 @@ metadata:
   name: example-consul-cluster
 spec:
   clusterName: example-consul-cluster
-  size: 1 # support's only one
+  size: 4 # support's only one

@@ -99,7 +99,7 @@ func NewController(
 		ConsulClustersSynced: ConsulClusterInformer.Informer().HasSynced,
 		workqueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ConsulClusters"),
 		recorder:             recorder,
-		consulCluster:        cluster.New(),
+		consulCluster:        cluster.New(kubeclientset),
 	}
 
 	klog.Info("Setting up event handlers")
@@ -149,6 +149,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
+	c.consulCluster.CreateServices()
 
 	klog.Info("Started workers")
 	<-stopCh
@@ -250,7 +251,11 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	c.consulCluster.Sync(clusterName, c.kubeclientset, ConsulCluster.Spec.Size)
+	err = c.consulCluster.Sync(clusterName, ConsulCluster.Spec.Size)
+	if err != nil {
+		utilruntime.HandleError(err)
+		return nil
+	}
 
 	err = c.updateConsulClusterStatus(ConsulCluster)
 	if err != nil {
